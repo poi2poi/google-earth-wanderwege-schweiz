@@ -73,15 +73,22 @@ Die Datei landet in `Google-Earth/`.
 
 [Source/convert_gpkg_to_kmz.py](Source/convert_gpkg_to_kmz.py) wandelt ein
 beliebiges GeoPackage (.gpkg) in eine KMZ- oder KML-Datei für Google Earth um:
-alle Geometrietypen, jedes Koordinatensystem. Es zeigt die enthaltenen Layer an
-und fragt, ob alle oder nur einzelne umgewandelt werden sollen. Die Farbe ist
-wählbar: 0 Weiss (Standard), 1 Rot, 2 Orange, 3 Gelb, 4 Grün, 5 Blau, 6 Indigo,
-7 Violett.
+alle Geometrietypen, jedes Koordinatensystem. Das Skript fragt der Reihe nach:
+
+1. welche Layer umgewandelt werden (alle oder einzelne),
+2. welches Attribut die Stecknadeln von Punkt-Layern beschriftet (mit
+   Beispieldatensatz),
+3. ob ein eigenes Symbol per URL statt der Stecknadel verwendet wird (Auswahl
+   unter [kml4earth.appspot.com/icons.html](https://kml4earth.appspot.com/icons.html)),
+4. welche Farbe: 0 Weiss (Standard), 1 Rot, 2 Orange, 3 Gelb, 4 Grün, 5 Blau,
+   6 Indigo, 7 Violett.
+
+Jede Frage lässt sich mit einer Option überspringen:
 
 ```
 pip install geopandas
-python Source/convert_gpkg_to_kmz.py daten.gpkg              # fragt nach Layern und Farbe
-python Source/convert_gpkg_to_kmz.py daten.gpkg --layer strassen --farbe 5
+python Source/convert_gpkg_to_kmz.py daten.gpkg              # fragt alles nach
+python Source/convert_gpkg_to_kmz.py daten.gpkg --layer Station --beschriftung name --icon "" --farbe 5
 python Source/convert_gpkg_to_kmz.py daten.gpkg -o karte.kml --ohne-attribute
 ```
 
@@ -181,14 +188,21 @@ The file is written to `Google-Earth/`.
 
 [Source/convert_gpkg_to_kmz.py](Source/convert_gpkg_to_kmz.py) converts any
 GeoPackage (.gpkg) into a KMZ or KML file for Google Earth: all geometry
-types, any coordinate system. It lists the layers in the file and asks whether
-to convert all of them or only some. You can pick the colour: 0 white
-(default), 1 red, 2 orange, 3 yellow, 4 green, 5 blue, 6 indigo, 7 violet.
+types, any coordinate system. The script asks, in order:
+
+1. which layers to convert (all or some),
+2. which attribute labels the pins of point layers (with an example record),
+3. whether to use a custom icon URL instead of the pin (see
+   [kml4earth.appspot.com/icons.html](https://kml4earth.appspot.com/icons.html)),
+4. which colour: 0 white (default), 1 red, 2 orange, 3 yellow, 4 green, 5 blue,
+   6 indigo, 7 violet.
+
+Each question can be skipped with an option:
 
 ```
 pip install geopandas
-python Source/convert_gpkg_to_kmz.py data.gpkg              # asks for layers and colour
-python Source/convert_gpkg_to_kmz.py data.gpkg --layer roads --farbe 5
+python Source/convert_gpkg_to_kmz.py data.gpkg              # asks for everything
+python Source/convert_gpkg_to_kmz.py data.gpkg --layer Station --beschriftung name --icon "" --farbe 5
 python Source/convert_gpkg_to_kmz.py data.gpkg -o map.kml --ohne-attribute
 ```
 
