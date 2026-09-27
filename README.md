@@ -1,6 +1,6 @@
-# Wanderwege Schweiz für Google Earth
-
 **[Jump to English](#english)**
+
+# Wanderwege Schweiz für Google Earth
 
 Alle signalisierten Wanderwege der Schweiz in einer KMZ-Datei für Google Earth,
 aufgeteilt nach Kanton bzw. Region. Das komplette Schweizer Wanderwegnetz,
