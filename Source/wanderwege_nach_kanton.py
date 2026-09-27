@@ -4,7 +4,8 @@ zusammen mit den Kantonsgrenzen (swissBOUNDARIES3D) als KMZ für Google Earth
 exportieren.
 
 Installation:  pip install geopandas pyogrio shapely pyproj
-Aufruf:        python wanderwege_nach_kanton.py
+Aufruf:        python Source/wanderwege_nach_kanton.py   (im Repo-Hauptordner,
+               wo auch die beiden .gpkg-Dateien liegen)
 """
 import zipfile
 from pathlib import Path
@@ -18,7 +19,7 @@ from shapely.ops import linemerge
 # --- Einstellungen ----------------------------------------------------------
 WEGE = "SWISSTLM3D_WANDERWEGE.gpkg"
 GRENZEN = "swissBOUNDARIES3D_1_5_LV95_LN02.gpkg"
-KMZ = Path("wanderwege_kmz") / "Wanderwege_Schweiz_nach_Kanton.kmz"
+KMZ = Path("Google-Earth") / "Wanderwege_Schweiz_nach_Kanton.kmz"
 
 # KML-Farben sind aabbggrr (nicht rrggbb!)
 WEG_FARBEN = {

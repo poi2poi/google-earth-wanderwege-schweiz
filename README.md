@@ -9,9 +9,18 @@ Wer Schweizer Wanderwege in Google Earth in 3D anschauen, Touren planen oder
 das Wegnetz eines Kantons überblicken möchte, lädt die Datei herunter und öffnet
 sie in Google Earth (Desktop oder Web).
 
-**Download:** [KMZ-Datei der Schweizer Wanderwege für Google Earth herunterladen (ca. 48 MB)](https://github.com/poi2poi/google-earth-wanderwege-schweiz/raw/main/Wanderwege_Schweiz_nach_Kanton.kmz)
+## Download
 
-Die Datei gibt es auch als [Release](https://github.com/poi2poi/google-earth-wanderwege-schweiz/releases/latest).
+- **[KMZ-Datei der Schweizer Wanderwege für Google Earth herunterladen (ca. 48 MB)](https://github.com/poi2poi/google-earth-wanderwege-schweiz/raw/main/Google-Earth/Wanderwege_Schweiz_nach_Kanton.kmz)**
+- [Aktuelle Version als Release-Download](https://github.com/poi2poi/google-earth-wanderwege-schweiz/releases/latest/download/Wanderwege_Schweiz_nach_Kanton.kmz)
+- [Python-Skript herunterladen](https://github.com/poi2poi/google-earth-wanderwege-schweiz/raw/main/Source/wanderwege_nach_kanton.py)
+
+## Ordnerstruktur
+
+| Ordner | Inhalt |
+|---|---|
+| [Google-Earth/](Google-Earth/) | KMZ-Datei für Google Earth |
+| [Source/](Source/) | Python-Skript, das die KMZ-Datei erzeugt |
 
 ## Inhalt
 
@@ -44,19 +53,19 @@ zugeordnet und enden deshalb nicht an der Grenze.
 
 ## Selbst erzeugen
 
-Die KMZ-Datei wird mit [wanderwege_nach_kanton.py](wanderwege_nach_kanton.py)
+Die KMZ-Datei wird mit [Source/wanderwege_nach_kanton.py](Source/wanderwege_nach_kanton.py)
 erzeugt. Die Regionen lassen sich dort im Dictionary `REGIONEN` anpassen.
 
-1. Die beiden Datensätze (siehe unten) als GeoPackage herunterladen und neben
-   das Skript legen.
-2. Abhängigkeiten installieren und Skript starten:
+1. Die beiden Datensätze (siehe unten) als GeoPackage herunterladen und in den
+   Hauptordner des Repos legen (sie sind per `.gitignore` ausgeschlossen).
+2. Abhängigkeiten installieren und Skript im Hauptordner starten:
 
    ```
    pip install geopandas pyogrio shapely pyproj
-   python wanderwege_nach_kanton.py
+   python Source/wanderwege_nach_kanton.py
    ```
 
-Die Datei landet in `wanderwege_kmz/`.
+Die Datei landet in `Google-Earth/`.
 
 ## Datenquellen
 
