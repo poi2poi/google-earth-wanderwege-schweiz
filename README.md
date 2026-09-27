@@ -1,11 +1,17 @@
 # Wanderwege Schweiz für Google Earth
 
 Alle signalisierten Wanderwege der Schweiz in einer KMZ-Datei für Google Earth,
-aufgeteilt nach Kanton bzw. Region.
+aufgeteilt nach Kanton bzw. Region. Das komplette Schweizer Wanderwegnetz,
+also Wanderwege, Bergwanderwege und Alpinwanderwege, liegt darin als KML/KMZ vor,
+erzeugt aus amtlichen Daten von swisstopo.
 
-**Download:** [Wanderwege_Schweiz_nach_Kanton.kmz](https://github.com/poi2poi/google-earth-wanderwege-schweiz/raw/main/Wanderwege_Schweiz_nach_Kanton.kmz) (ca. 48 MB)
+Wer Schweizer Wanderwege in Google Earth in 3D anschauen, Touren planen oder
+das Wegnetz eines Kantons überblicken möchte, lädt die Datei herunter und öffnet
+sie in Google Earth (Desktop oder Web).
 
-Datei herunterladen und in Google Earth (Desktop oder Web) öffnen.
+**Download:** [KMZ-Datei der Schweizer Wanderwege für Google Earth herunterladen (ca. 48 MB)](https://github.com/poi2poi/google-earth-wanderwege-schweiz/raw/main/Wanderwege_Schweiz_nach_Kanton.kmz)
+
+Die Datei gibt es auch als [Release](https://github.com/poi2poi/google-earth-wanderwege-schweiz/releases/latest).
 
 ## Inhalt
 
