@@ -1,8 +1,9 @@
 """
 GeoPackage (.gpkg) nach KMZ oder KML für Google Earth umwandeln.
 
-Das Skript funktioniert mit beliebigen GeoPackages: Es übernimmt alle Layer
-(oder nur ausgewählte), alle Geometrietypen (Punkte, Linien, Flächen und deren
+Das Skript funktioniert mit beliebigen GeoPackages: Es zeigt die enthaltenen
+Layer an und fragt, ob alle oder nur einzelne umgewandelt werden sollen. Es
+unterstützt alle Geometrietypen (Punkte, Linien, Flächen und deren
 Multi-Varianten) und rechnet jedes Koordinatensystem nach WGS84 um, das
 Google Earth erwartet. Jeder Layer wird ein eigener Ordner in Google Earth.
 
@@ -13,7 +14,7 @@ Alle Geometrien werden in einer Farbe gezeichnet, nie in Schwarz:
 
 Installation:  pip install geopandas
 Beispiele:
-    python convert_gpkg_to_kmz.py daten.gpkg               (fragt nach der Farbe)
+    python convert_gpkg_to_kmz.py daten.gpkg               (fragt nach Layern und Farbe)
     python convert_gpkg_to_kmz.py daten.gpkg --farbe 5     (blau)
     python convert_gpkg_to_kmz.py daten.gpkg -o karte.kml  (unkomprimiertes KML)
     python convert_gpkg_to_kmz.py daten.gpkg --layer strassen --ohne-attribute
@@ -66,6 +67,35 @@ def frage_farbe():
             return 0
         if eingabe.isdigit() and int(eingabe) < len(FARBEN):
             return int(eingabe)
+        print("Ungültige Eingabe, bitte nochmals.")
+
+
+def frage_layer(gpkg):
+    """Enthaltene Layer anzeigen und abfragen, welche umgewandelt werden.
+
+    Layer ohne Geometrie (reine Tabellen) werden nur zur Info angezeigt,
+    denn sie lassen sich nicht auf einer Karte darstellen.
+    """
+    alle = gpd.list_layers(gpkg)
+    karten_layer = list(alle.loc[alle["geometry_type"].notna(), "name"])
+    tabellen = list(alle.loc[alle["geometry_type"].isna(), "name"])
+
+    print(f"Layer in {gpkg.name}:")
+    for nummer, name in enumerate(karten_layer, start=1):
+        typ = alle.loc[alle["name"] == name, "geometry_type"].iloc[0]
+        print(f"  {nummer}  {name} ({typ})")
+    for name in tabellen:
+        print(f"     {name} (keine Geometrie, wird übersprungen)")
+
+    antwort = input("Alle Layer umwandeln? [J/n]: ").strip().lower()
+    if antwort in ("", "j", "ja", "y", "yes"):
+        return karten_layer
+
+    while True:
+        eingabe = input("Nummern der gewünschten Layer, mit Komma getrennt (z. B. 1,3): ")
+        teile = [t.strip() for t in eingabe.split(",") if t.strip()]
+        if teile and all(t.isdigit() and 1 <= int(t) <= len(karten_layer) for t in teile):
+            return [karten_layer[int(t) - 1] for t in teile]
         print("Ungültige Eingabe, bitte nochmals.")
 
 
@@ -193,7 +223,7 @@ def argumente():
     parser.add_argument("-o", "--ausgabe", type=Path,
                         help="Zieldatei (.kmz oder .kml). Standard: wie Eingabe, mit .kmz")
     parser.add_argument("-l", "--layer", nargs="+",
-                        help="Nur diese Layer umwandeln. Standard: alle")
+                        help="Nur diese Layer umwandeln. Ohne Angabe wird nachgefragt")
     parser.add_argument("-f", "--farbe", type=int, choices=range(len(FARBEN)),
                         help="Farbe 0-7 (0 = Weiss). Ohne Angabe wird nachgefragt")
     parser.add_argument("--ohne-attribute", action="store_true",
@@ -204,7 +234,7 @@ def argumente():
 def main():
     args = argumente()
     ziel = args.ausgabe or args.gpkg.with_suffix(".kmz")
-    layer = args.layer or list(gpd.list_layers(args.gpkg)["name"])
+    layer = args.layer or frage_layer(args.gpkg)
     farbe = args.farbe if args.farbe is not None else frage_farbe()
     farbname, rgb = FARBEN[farbe]
 
