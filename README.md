@@ -73,29 +73,33 @@ Die Datei landet in `Google-Earth/`.
 
 [Source/convert_gpkg_to_kmz.py](Source/convert_gpkg_to_kmz.py) wandelt ein
 beliebiges GeoPackage (.gpkg) in eine KMZ- oder KML-Datei für Google Earth um:
-alle Geometrietypen, jedes Koordinatensystem. Das Skript fragt der Reihe nach:
-
-1. welche Layer umgewandelt werden (alle oder einzelne),
-2. welches Attribut die Stecknadeln von Punkt-Layern beschriftet (mit
-   Beispieldatensatz),
-3. ob ein eigenes Symbol (URL oder Datei) statt der Stecknadel verwendet wird
-   (Auswahl unter [kml4earth.appspot.com/icons.html](https://kml4earth.appspot.com/icons.html)).
-   Das Icon wird ins KMZ eingebettet, die Datei funktioniert also auch offline.
-   SVG wird in ein PNG mit transparentem Hintergrund umgewandelt, dafür braucht
-   es zusätzlich `pip install resvg-py`.
-4. welche Farbe: 0 Weiss (Standard), 1 Rot, 2 Orange, 3 Gelb, 4 Grün, 5 Blau,
-   6 Indigo, 7 Violett.
-
-Jede Frage lässt sich mit einer Option überspringen:
+alle Geometrietypen, jedes Koordinatensystem.
 
 ```
 pip install geopandas
-python Source/convert_gpkg_to_kmz.py daten.gpkg              # fragt alles nach
-python Source/convert_gpkg_to_kmz.py daten.gpkg --layer Station --beschriftung name --icon "" --farbe 5
-python Source/convert_gpkg_to_kmz.py daten.gpkg -o karte.kml --ohne-attribute
+python Source/convert_gpkg_to_kmz.py
 ```
 
-Alle Optionen zeigt `python Source/convert_gpkg_to_kmz.py --help`.
+Das Skript fragt alles der Reihe nach ab. Fragen, die für die gewählten Daten
+keine Rolle spielen, entfallen:
+
+1. GeoPackage-Datei
+2. welche Layer umgewandelt werden (alle oder einzelne)
+3. welches Attribut die Stecknadeln beschriftet (nur bei Punkt-Layern, mit
+   Beispieldatensatz)
+4. eigenes Symbol statt der Stecknadel, als URL oder Datei (nur bei
+   Punkt-Layern, Auswahl unter [kml4earth.appspot.com/icons.html](https://kml4earth.appspot.com/icons.html)).
+   Das Icon wird ins KMZ eingebettet, die Datei funktioniert also auch offline.
+   SVG wird in ein PNG mit transparentem Hintergrund umgewandelt, dafür braucht
+   es zusätzlich `pip install resvg-py`.
+5. Farbe: 0 Weiss (Standard), 1 Rot, 2 Orange, 3 Gelb, 4 Grün, 5 Blau,
+   6 Indigo, 7 Violett
+6. Höhenwerte behalten (nur wenn die Daten tatsächlich welche enthalten):
+   3D auf der gespeicherten Höhe über Meer oder auf das Gelände gelegt
+7. Linien ohne Höhenwerte als Luftlinie zeichnen, also gerade von Stützpunkt
+   zu Stützpunkt statt dem Gelände folgend (z. B. für Seilbahnen)
+8. Sachdaten mitnehmen (in Google Earth per Klick sichtbar)
+9. Zieldatei (.kmz oder .kml)
 
 ## Datenquellen
 
@@ -191,29 +195,32 @@ The file is written to `Google-Earth/`.
 
 [Source/convert_gpkg_to_kmz.py](Source/convert_gpkg_to_kmz.py) converts any
 GeoPackage (.gpkg) into a KMZ or KML file for Google Earth: all geometry
-types, any coordinate system. The script asks, in order:
+types, any coordinate system.
 
-1. which layers to convert (all or some),
-2. which attribute labels the pins of point layers (with an example record),
-3. whether to use a custom icon (URL or file) instead of the pin (see
+```
+pip install geopandas
+python Source/convert_gpkg_to_kmz.py
+```
+
+The script asks for everything step by step (in German). Questions that don't
+apply to the selected data are skipped:
+
+1. GeoPackage file
+2. which layers to convert (all or some)
+3. which attribute labels the pins (point layers only, with an example record)
+4. custom icon instead of the pin, as URL or file (point layers only, see
    [kml4earth.appspot.com/icons.html](https://kml4earth.appspot.com/icons.html)).
    The icon is embedded in the KMZ, so the file also works offline. SVG is
    converted to a PNG with a transparent background, which additionally needs
    `pip install resvg-py`.
-4. which colour: 0 white (default), 1 red, 2 orange, 3 yellow, 4 green, 5 blue,
-   6 indigo, 7 violet.
-
-Each question can be skipped with an option:
-
-```
-pip install geopandas
-python Source/convert_gpkg_to_kmz.py data.gpkg              # asks for everything
-python Source/convert_gpkg_to_kmz.py data.gpkg --layer Station --beschriftung name --icon "" --farbe 5
-python Source/convert_gpkg_to_kmz.py data.gpkg -o map.kml --ohne-attribute
-```
-
-`python Source/convert_gpkg_to_kmz.py --help` lists all options. The script's
-options and messages are in German.
+5. colour: 0 white (default), 1 red, 2 orange, 3 yellow, 4 green, 5 blue,
+   6 indigo, 7 violet
+6. keep elevation values (only if the data actually contains them): 3D at the
+   stored height above sea level, or draped on the terrain
+7. draw lines without elevation as straight lines through the air from vertex
+   to vertex instead of following the terrain (e.g. for cable cars)
+8. include attribute data (shown in Google Earth on click)
+9. output file (.kmz or .kml)
 
 ## Data sources
 
