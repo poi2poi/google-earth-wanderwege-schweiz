@@ -78,8 +78,11 @@ alle Geometrietypen, jedes Koordinatensystem. Das Skript fragt der Reihe nach:
 1. welche Layer umgewandelt werden (alle oder einzelne),
 2. welches Attribut die Stecknadeln von Punkt-Layern beschriftet (mit
    Beispieldatensatz),
-3. ob ein eigenes Symbol per URL statt der Stecknadel verwendet wird (Auswahl
-   unter [kml4earth.appspot.com/icons.html](https://kml4earth.appspot.com/icons.html)),
+3. ob ein eigenes Symbol (URL oder Datei) statt der Stecknadel verwendet wird
+   (Auswahl unter [kml4earth.appspot.com/icons.html](https://kml4earth.appspot.com/icons.html)).
+   Das Icon wird ins KMZ eingebettet, die Datei funktioniert also auch offline.
+   SVG wird in ein PNG mit transparentem Hintergrund umgewandelt, dafür braucht
+   es zusätzlich `pip install resvg-py`.
 4. welche Farbe: 0 Weiss (Standard), 1 Rot, 2 Orange, 3 Gelb, 4 Grün, 5 Blau,
    6 Indigo, 7 Violett.
 
@@ -192,8 +195,11 @@ types, any coordinate system. The script asks, in order:
 
 1. which layers to convert (all or some),
 2. which attribute labels the pins of point layers (with an example record),
-3. whether to use a custom icon URL instead of the pin (see
-   [kml4earth.appspot.com/icons.html](https://kml4earth.appspot.com/icons.html)),
+3. whether to use a custom icon (URL or file) instead of the pin (see
+   [kml4earth.appspot.com/icons.html](https://kml4earth.appspot.com/icons.html)).
+   The icon is embedded in the KMZ, so the file also works offline. SVG is
+   converted to a PNG with a transparent background, which additionally needs
+   `pip install resvg-py`.
 4. which colour: 0 white (default), 1 red, 2 orange, 3 yellow, 4 green, 5 blue,
    6 indigo, 7 violet.
 

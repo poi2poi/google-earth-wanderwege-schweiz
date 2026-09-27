@@ -6,7 +6,10 @@ Das Skript funktioniert mit beliebigen GeoPackages. Es fragt der Reihe nach:
   1. welche Layer umgewandelt werden (alle oder einzelne),
   2. welches Attribut die Stecknadeln von Punkt-Layern beschriftet
      (dazu wird ein Beispieldatensatz angezeigt),
-  3. ob ein eigenes Symbol (Icon-URL) statt der Stecknadel verwendet wird,
+  3. ob ein eigenes Symbol (URL oder Datei) statt der Stecknadel verwendet
+     wird. Es wird ins KMZ eingebettet, die Datei funktioniert also auch
+     offline. SVG kann Google Earth nicht anzeigen, es wird daher in ein PNG
+     mit transparentem Hintergrund umgewandelt (braucht: pip install resvg-py),
   4. in welcher Farbe gezeichnet wird (nie Schwarz):
 
         0 Weiss (Standard)   1 Rot      2 Orange   3 Gelb
@@ -17,7 +20,7 @@ unterstützt, jedes Koordinatensystem wird nach WGS84 umgerechnet, das Google
 Earth erwartet. Jeder Layer wird ein eigener Ordner in Google Earth.
 Jede Frage lässt sich mit einer Option überspringen (siehe --help).
 
-Installation:  pip install geopandas
+Installation:  pip install geopandas          (resvg-py nur für SVG-Icons)
 Beispiele:
     python convert_gpkg_to_kmz.py daten.gpkg               (fragt alles nach)
     python convert_gpkg_to_kmz.py daten.gpkg -o karte.kml  (unkomprimiertes KML)
@@ -26,6 +29,7 @@ Beispiele:
 """
 import argparse
 import io
+import urllib.request
 import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -50,6 +54,7 @@ LINIENBREITE = 3
 FLAECHEN_DECKKRAFT = "66"   # Füllung halbtransparent (00 = unsichtbar, ff = deckend)
 WGS84 = 4326                # EPSG-Code des Koordinatensystems von Google Earth
 ICON_LISTE = "https://kml4earth.appspot.com/icons.html"
+ICON_BREITE = 64            # Pixel, auf die ein SVG-Icon gerendert wird
 JA = ("", "j", "ja", "y", "yes")   # Enter zählt als Ja
 
 
@@ -58,7 +63,7 @@ class Einstellungen:
     """Alles, was der Benutzer für die Umwandlung festgelegt hat."""
     layer: list
     rgb: str
-    icon: str = ""                                    # leer = Stecknadel von Google Earth
+    icon: str = ""                                    # URL/Datei, leer = Stecknadel
     beschriftung: dict = field(default_factory=dict)  # Layer -> Spalte (None = keine)
     mit_attributen: bool = True
 
@@ -136,14 +141,19 @@ def frage_beschriftung(gpkg, layer):
     return beschriftung
 
 
+def ist_url(text):
+    return text.startswith(("http://", "https://"))
+
+
 def frage_icon():
-    """Optional eine Icon-URL für Punkte abfragen. Enter behält die Stecknadel."""
+    """Optional ein Icon (URL oder Datei, PNG/JPG/SVG) abfragen. Enter behält die Stecknadel."""
     print(f"\nEigenes Symbol für Punkte? Eine Auswahl gibt es unter {ICON_LISTE}")
     while True:
-        url = input("Icon-URL [Enter = Stecknadel von Google Earth]: ").strip()
-        if url == "" or url.startswith(("http://", "https://")):
-            return url
-        print("Bitte eine URL angeben, die mit http:// oder https:// beginnt.")
+        quelle = input("Icon-URL oder Datei [Enter = Stecknadel von Google Earth]: ")
+        quelle = quelle.strip().strip('"')   # Pfade aus dem Explorer haben Anführungszeichen
+        if quelle == "" or ist_url(quelle) or Path(quelle).is_file():
+            return quelle
+        print("Weder URL (http:// bzw. https://) noch vorhandene Datei, bitte nochmals.")
 
 
 def frage_farbe():
@@ -153,6 +163,35 @@ def frage_farbe():
         print(f"  {nummer}  {name}")
     return frage_zahl(f"Zahl 0-{len(FARBEN) - 1} [Enter = Weiss]: ",
                       0, len(FARBEN) - 1, standard=0)
+
+
+# --- Icon -----------------------------------------------------------------------
+def lade_icon(quelle):
+    """Icon von URL oder Datei laden und als (Bilddaten, Dateiendung) liefern.
+
+    SVG wird in PNG mit transparentem Hintergrund umgewandelt, weil Google
+    Earth kein SVG anzeigt. Andere Formate (PNG, JPG, GIF) bleiben unverändert.
+    """
+    try:
+        if ist_url(quelle):
+            # Manche Server lehnen Anfragen ohne User-Agent ab
+            anfrage = urllib.request.Request(quelle, headers={"User-Agent": "convert_gpkg_to_kmz"})
+            with urllib.request.urlopen(anfrage, timeout=30) as antwort:
+                daten = antwort.read()
+        else:
+            daten = Path(quelle).read_bytes()
+    except OSError as fehler:
+        raise SystemExit(f"Icon konnte nicht geladen werden: {quelle}\n  {fehler}")
+
+    endung = Path(quelle.split("?")[0]).suffix.lower() or ".png"
+    if endung == ".svg" or b"<svg" in daten[:1000]:   # auch SVG-URLs ohne Endung
+        try:
+            import resvg_py   # nur hier gebraucht, daher erst bei Bedarf laden
+        except ImportError:
+            raise SystemExit("Für SVG-Icons wird resvg-py gebraucht: pip install resvg-py")
+        daten = resvg_py.svg_to_bytes(svg_string=daten.decode("utf-8"), width=ICON_BREITE)
+        endung = ".png"
+    return daten, endung
 
 
 # --- Stil -----------------------------------------------------------------------
@@ -166,15 +205,16 @@ def kml_farbe(rgb, deckkraft="ff"):
     return f"{deckkraft}{blau}{gruen}{rot}".lower()
 
 
-def stil_kml(rgb, icon):
+def stil_kml(rgb, icon_href):
     """Gemeinsamer KML-Stil für Punkte, Linien und Flächen.
 
+    icon_href ist der Pfad des eingebetteten Icons (leer = Stecknadel).
     Google Earth färbt das Icon in der gewählten Farbe ein. Bei Weiss bleibt
     ein eigenes Icon daher unverändert.
     """
     farbe = kml_farbe(rgb)
     fuellung = kml_farbe(rgb, FLAECHEN_DECKKRAFT)
-    symbol = f"<Icon><href>{escape(icon)}</href></Icon>" if icon else ""
+    symbol = f"<Icon><href>{escape(icon_href)}</href></Icon>" if icon_href else ""
     return (
         '<Style id="stil">'
         f"<IconStyle><color>{farbe}</color>{symbol}</IconStyle>"
@@ -244,7 +284,7 @@ def placemarks(gdf, name_spalte, mit_attributen):
 
 
 # --- Ein- und Ausgabe -----------------------------------------------------------
-def schreibe_kml(datei, gpkg, e):
+def schreibe_kml(datei, gpkg, e, icon_href):
     """Das ganze KML-Dokument Layer für Layer in eine offene Textdatei schreiben.
 
     Es wird fortlaufend geschrieben statt alles im Speicher zu sammeln, damit
@@ -252,7 +292,7 @@ def schreibe_kml(datei, gpkg, e):
     """
     datei.write('<?xml version="1.0" encoding="UTF-8"?>\n'
                 '<kml xmlns="http://www.opengis.net/kml/2.2"><Document>\n'
-                f"<name>{escape(gpkg.stem)}</name>{stil_kml(e.rgb, e.icon)}\n")
+                f"<name>{escape(gpkg.stem)}</name>{stil_kml(e.rgb, icon_href)}\n")
     for name in e.layer:
         gdf = gpd.read_file(gpkg, layer=name)
         if not isinstance(gdf, gpd.GeoDataFrame):
@@ -281,15 +321,26 @@ def schreibe_kml(datei, gpkg, e):
 
 
 def konvertiere(gpkg, ziel, e):
-    """GeoPackage als KMZ (ZIP mit doc.kml) oder als reine KML-Datei speichern."""
+    """GeoPackage als KMZ (ZIP mit doc.kml) oder als reine KML-Datei speichern.
+
+    Ein eigenes Icon liegt im KMZ unter files/, beim KML als Datei daneben.
+    """
+    icon, endung = lade_icon(e.icon) if e.icon else (None, "")
+
     if ziel.suffix.lower() == ".kml":
+        icon_href = f"{ziel.stem}_icon{endung}" if icon else ""
+        if icon:
+            (ziel.parent / icon_href).write_bytes(icon)
         with open(ziel, "w", encoding="utf-8") as datei:
-            schreibe_kml(datei, gpkg, e)
+            schreibe_kml(datei, gpkg, e, icon_href)
     else:
+        icon_href = f"files/icon{endung}" if icon else ""
         with zipfile.ZipFile(ziel, "w", zipfile.ZIP_DEFLATED) as kmz:
             with kmz.open("doc.kml", "w") as roh, \
                     io.TextIOWrapper(roh, encoding="utf-8") as datei:
-                schreibe_kml(datei, gpkg, e)
+                schreibe_kml(datei, gpkg, e, icon_href)
+            if icon:
+                kmz.writestr(icon_href, icon)
 
 
 def argumente():
@@ -304,7 +355,8 @@ def argumente():
     parser.add_argument("-b", "--beschriftung",
                         help="Attribut für die Beschriftung, in allen Layern die es haben")
     parser.add_argument("-i", "--icon",
-                        help=f'Icon-URL für Punkte ("" = Stecknadel). Auswahl: {ICON_LISTE}')
+                        help=f'Icon für Punkte als URL oder Datei, SVG wird zu PNG '
+                             f'("" = Stecknadel). Auswahl: {ICON_LISTE}')
     parser.add_argument("-f", "--farbe", type=int, choices=range(len(FARBEN)),
                         help="Farbe 0-7 (0 = Weiss)")
     parser.add_argument("--ohne-attribute", action="store_true",
