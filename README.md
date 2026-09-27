@@ -93,7 +93,7 @@ Fragen, die für die gewählten Daten keine Rolle spielen, entfallen.
 | `--icon` | eigenes Symbol als URL oder Datei (nur Punkt-Layer), `none` = Stecknadel. Auswahl unter [kml4earth.appspot.com/icons.html](https://kml4earth.appspot.com/icons.html). Das Icon wird ins KMZ eingebettet; SVG wird in ein PNG mit transparentem Hintergrund umgewandelt (braucht zusätzlich `pip install resvg-py`) |
 | `-c`, `--color` | 0 Weiss (Standard), 1 Rot, 2 Orange, 3 Gelb, 4 Grün, 5 Blau, 6 Indigo, 7 Violett oder ein Hex-Wert mit oder ohne `#` (`FF8800`, `#F80`). |
 | `--elevation` / `--no-elevation` | Höhenwerte behalten (3D, Höhe über Meer) oder auf das Gelände legen. Nur relevant, wenn die Daten tatsächlich Höhenwerte enthalten |
-| `--straight` / `--no-straight` | Linien ohne Höhenwerte als Luftlinie, gerade vom Anfangs- zum Endpunkt durch die Luft (z. B. von der Tal- zur Bergstation einer Seilbahn), oder dem Gelände folgend |
+| `--straight` / `--no-straight` | Linien ohne Höhenwerte als Luftlinie, gerade von Stützpunkt zu Stützpunkt (z. B. Seilbahnen), oder dem Gelände folgend |
 | `--attributes` / `--no-attributes` | Sachdaten mitnehmen (in Google Earth per Klick sichtbar) |
 | `-o`, `--outfile` | Zieldatei (.kmz oder .kml) |
 
@@ -212,7 +212,7 @@ skipped.
 | `--icon` | custom icon as URL or file (point layers only), `none` = default pin. See [kml4earth.appspot.com/icons.html](https://kml4earth.appspot.com/icons.html). The icon is embedded in the KMZ; SVG is converted to a PNG with a transparent background (additionally needs `pip install resvg-py`) |
 | `-c`, `--color` | 0 white (default), 1 red, 2 orange, 3 yellow, 4 green, 5 blue, 6 indigo, 7 violet, or a hex value with or without `#` (`FF8800`, `#F80`). |
 | `--elevation` / `--no-elevation` | keep elevation (3D, height above sea level) or drape on the terrain. Only relevant if the data actually contains elevation values |
-| `--straight` / `--no-straight` | draw lines without elevation as a straight line through the air from start to end point (e.g. from the valley to the mountain station of a cable car), or follow the terrain |
+| `--straight` / `--no-straight` | draw lines without elevation as straight lines through the air from vertex to vertex (e.g. cable cars), or follow the terrain |
 | `--attributes` / `--no-attributes` | include attribute data (shown in Google Earth on click) |
 | `-o`, `--outfile` | output file (.kmz or .kml) |
 

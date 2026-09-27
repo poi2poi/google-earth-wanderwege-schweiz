@@ -22,9 +22,8 @@ gewählten Daten keine Rolle spielen, entfallen.
   --elevation/--no-elevation Höhenwerte behalten (nur wenn die Daten tatsächlich
                              welche enthalten): 3D auf der gespeicherten Höhe
                              über Meer oder auf das Gelände gelegt
-  --straight/--no-straight   Linien ohne Höhenwerte als Luftlinie: gerade vom
-                             Anfangs- zum Endpunkt durch die Luft, z. B. von der
-                             Tal- zur Bergstation einer Seilbahn
+  --straight/--no-straight   Linien ohne Höhenwerte als Luftlinie, gerade von
+                             Stützpunkt zu Stützpunkt (z. B. für Seilbahnen)
   --attributes/--no-attributes  Sachdaten mitnehmen (per Klick sichtbar)
   -o, --outfile              Zieldatei (.kmz oder .kml)
 
@@ -241,7 +240,7 @@ def frage_luftlinie(linien_layer):
     """Fragen, ob Linien ohne Höhenwerte als Luftlinie gezeichnet werden."""
     print(f"\nLinien ohne Höhenwerte: {', '.join(linien_layer)}")
     print("  Nein: dem Gelände folgend (z. B. Wege, Strassen)")
-    print("  Ja:   Luftlinie, gerade vom Anfangs- zum Endpunkt (z. B. Seilbahnen)")
+    print("  Ja:   Luftlinie, gerade von Stützpunkt zu Stützpunkt (z. B. Seilbahnen)")
     return frage_ja_nein("Als Luftlinie zeichnen?", standard=False)
 
 
@@ -338,7 +337,7 @@ def lage_kml(hoehe, luftlinie=False):
     """Wie Google Earth die Geometrie in der Höhe platziert.
 
     absolute:         auf der gespeicherten Höhe über Meer (3D-Daten).
-    relativeToGround: Endpunkte am Boden, dazwischen gerade durch die Luft.
+    relativeToGround: Stützpunkte am Boden, dazwischen gerade durch die Luft.
     tessellate:       auf das Gelände gelegt, Linien folgen dem Relief.
     """
     if hoehe:
@@ -359,11 +358,7 @@ def geometrie_kml(geom, mit_hoehe, luftlinie):
 
     Hat die Geometrie Höhenwerte und ist mit_hoehe gesetzt, bleibt sie 3D.
     Sonst wird sie auf das Gelände gelegt, ausser Linien mit luftlinie=True:
-    diese verlaufen gerade vom Anfangs- zum Endpunkt durch die Luft.
-
-    Für die Luftlinie werden bewusst nur die beiden Endpunkte verwendet. Mit
-    allen Stützpunkten (z. B. jedem Seilbahnmast) läge die Linie zwischen
-    nahen Punkten fast auf dem Gelände oder bei gewölbtem Hang sogar darunter.
+    diese verlaufen gerade von Stützpunkt zu Stützpunkt durch die Luft.
     """
     typ = geom.geom_type
     hoehe = mit_hoehe and geom.has_z
@@ -371,11 +366,8 @@ def geometrie_kml(geom, mit_hoehe, luftlinie):
         lage = lage_kml(hoehe) if hoehe else ""   # tessellate gibt es bei Punkten nicht
         return f"<Point>{lage}<coordinates>{koordinaten(geom.coords, hoehe)}</coordinates></Point>"
     if typ in ("LineString", "LinearRing"):
-        punkte = geom.coords
-        if luftlinie and not hoehe:
-            punkte = [punkte[0], punkte[-1]]
         return (f"<LineString>{lage_kml(hoehe, luftlinie)}"
-                f"<coordinates>{koordinaten(punkte, hoehe)}</coordinates></LineString>")
+                f"<coordinates>{koordinaten(geom.coords, hoehe)}</coordinates></LineString>")
     if typ == "Polygon":
         aussen = f"<outerBoundaryIs>{ring_kml(geom.exterior, hoehe)}</outerBoundaryIs>"
         loecher = "".join(f"<innerBoundaryIs>{ring_kml(r, hoehe)}</innerBoundaryIs>"
