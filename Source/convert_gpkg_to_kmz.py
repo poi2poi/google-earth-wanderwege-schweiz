@@ -157,6 +157,10 @@ def schreibe_kml(datei, gpkg, layer, rgb, mit_attributen):
                 f"<name>{escape(gpkg.stem)}</name>{stil_kml(rgb)}\n")
     for name in layer:
         gdf = gpd.read_file(gpkg, layer=name)
+        if not isinstance(gdf, gpd.GeoDataFrame):
+            # Reine Tabelle ohne Geometrie (z. B. Stammdaten): nicht darstellbar
+            print(f"  {name}: übersprungen (keine Geometrie)")
+            continue
         if gdf.crs is not None:
             gdf = gdf.to_crs(WGS84)
         else:
