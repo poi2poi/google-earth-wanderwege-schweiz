@@ -18,6 +18,7 @@ gewählten Daten keine Rolle spielen, entfallen.
   -c, --color                Farbe, nie Schwarz:
                                0 Weiss (Standard)  1 Rot   2 Orange  3 Gelb
                                4 Grün              5 Blau  6 Indigo  7 Violett
+                             oder Hex-Wert mit oder ohne # (FF8800, #F80)
   --elevation/--no-elevation Höhenwerte behalten (nur wenn die Daten tatsächlich
                              welche enthalten): 3D auf der gespeicherten Höhe
                              über Meer oder auf das Gelände gelegt
@@ -67,6 +68,7 @@ WGS84 = 4326                # EPSG-Code des Koordinatensystems von Google Earth
 ICON_LISTE = "https://kml4earth.appspot.com/icons.html"
 ICON_BREITE = 64            # Pixel, auf die ein SVG-Icon gerendert wird
 STICHPROBE = 1000           # so viele Objekte pro Layer werden auf Höhenwerte geprüft
+MIN_HELLIGKEIT = 0x40       # hellster Farbkanal muss mindestens so hell sein (kein Schwarz)
 
 
 @dataclass
@@ -188,13 +190,46 @@ def frage_icon():
         print("Weder URL (http:// bzw. https://) noch vorhandene Datei, bitte nochmals.")
 
 
+def lies_farbe(text):
+    """Farbangabe in (Name, RGB-Hex) umwandeln.
+
+    Erlaubt sind eine Zahl 0-7 aus FARBEN oder ein Hex-Wert mit oder ohne "#",
+    sechsstellig (FF8800) oder dreistellig (F80 = FF8800).
+    Schwarz und fast schwarze Farben sind nicht erlaubt, sie wären auf dunklem
+    Gelände kaum sichtbar. Ungültige Angaben lösen einen ValueError aus.
+    """
+    text = text.strip()
+    if len(text) == 1 and text.isdigit():   # einzelne Ziffer = Nummer aus FARBEN
+        if int(text) < len(FARBEN):
+            return FARBEN[int(text)]
+        raise ValueError(f"Ungültige Farbe: {text} (erwartet 0-{len(FARBEN) - 1} "
+                         "oder Hex-Wert wie #FF8800)")
+
+    hexwert = text.lstrip("#").upper()
+    if len(hexwert) == 3:
+        hexwert = "".join(zeichen * 2 for zeichen in hexwert)
+    if len(hexwert) != 6 or any(z not in "0123456789ABCDEF" for z in hexwert):
+        raise ValueError(f"Ungültige Farbe: {text} (erwartet 0-{len(FARBEN) - 1} "
+                         "oder Hex-Wert wie #FF8800)")
+    if max(int(hexwert[i:i + 2], 16) for i in (0, 2, 4)) < MIN_HELLIGKEIT:
+        raise ValueError(f"Farbe #{hexwert} ist (fast) schwarz, bitte eine hellere wählen")
+    return f"#{hexwert}", hexwert
+
+
 def frage_farbe():
-    """Farbe abfragen. Enter bedeutet Weiss (0)."""
+    """Farbe abfragen: Zahl 0-7 oder Hex-Wert. Enter bedeutet Weiss (0)."""
     print("\nFarbe für die Geometrien:")
     for nummer, (name, _) in enumerate(FARBEN):
         print(f"  {nummer}  {name}")
-    return frage_zahl(f"Zahl 0-{len(FARBEN) - 1} [Enter = Weiss]: ",
-                      0, len(FARBEN) - 1, standard=0)
+    while True:
+        eingabe = input(f"Zahl 0-{len(FARBEN) - 1} oder Hex-Wert wie #FF8800 "
+                        "[Enter = Weiss]: ")
+        if eingabe.strip() == "":
+            return FARBEN[0]
+        try:
+            return lies_farbe(eingabe)
+        except ValueError as fehler:
+            print(fehler)
 
 
 def frage_hoehe(z_layer):
@@ -447,8 +482,9 @@ def argumente():
                         help='Attribut für die Beschriftung der Stecknadeln, "none" = keine')
     parser.add_argument("--icon", metavar="URL_ODER_DATEI",
                         help=f'Icon für Punkte, "none" = Stecknadel. Auswahl: {ICON_LISTE}')
-    parser.add_argument("-c", "--color", type=int, choices=range(len(FARBEN)),
-                        help="Farbe: " + ", ".join(f"{i} {n}" for i, (n, _) in enumerate(FARBEN)))
+    parser.add_argument("-c", "--color", type=farbe_parameter, metavar="FARBE",
+                        help="Farbe: " + ", ".join(f"{i} {n}" for i, (n, _) in enumerate(FARBEN))
+                             + ' oder Hex-Wert wie "#FF8800" bzw. FF8800')
     parser.add_argument("--elevation", action=argparse.BooleanOptionalAction,
                         help="Höhenwerte behalten (3D) bzw. auf das Gelände legen")
     parser.add_argument("--straight", action=argparse.BooleanOptionalAction,
@@ -456,6 +492,14 @@ def argumente():
     parser.add_argument("--attributes", action=argparse.BooleanOptionalAction,
                         help="Sachdaten mitnehmen bzw. weglassen")
     return parser, parser.parse_args()
+
+
+def farbe_parameter(text):
+    """lies_farbe für argparse: Fehler als verständliche Parameter-Meldung."""
+    try:
+        return lies_farbe(text)
+    except ValueError as fehler:
+        raise argparse.ArgumentTypeError(str(fehler))
 
 
 def ohne(wert):
@@ -497,8 +541,7 @@ def main():
     else:
         icon = frage_icon() if punkt_layer else ""
 
-    farbe = args.color if args.color is not None else frage_farbe()
-    farbname, rgb = FARBEN[farbe]
+    farbname, rgb = args.color or frage_farbe()
 
     # Höhe nur, wenn Layer tatsächlich Höhenwerte enthalten
     z_layer = [n for n in layer if hat_hoehenwerte(gpkg, n)]
