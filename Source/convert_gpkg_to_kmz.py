@@ -15,15 +15,16 @@ gewählten Daten keine Rolle spielen, entfallen.
                              ins KMZ eingebettet. SVG wird in ein PNG mit
                              transparentem Hintergrund umgewandelt (braucht:
                              pip install resvg-py)
-  -c, --color                Farbe, nie Schwarz:
+  -c, --color                Farbe:
                                0 Weiss (Standard)  1 Rot   2 Orange  3 Gelb
                                4 Grün              5 Blau  6 Indigo  7 Violett
                              oder Hex-Wert mit oder ohne # (FF8800, #F80)
   --elevation/--no-elevation Höhenwerte behalten (nur wenn die Daten tatsächlich
                              welche enthalten): 3D auf der gespeicherten Höhe
                              über Meer oder auf das Gelände gelegt
-  --straight/--no-straight   Linien ohne Höhenwerte als Luftlinie, gerade von
-                             Stützpunkt zu Stützpunkt (z. B. für Seilbahnen)
+  --straight/--no-straight   Linien ohne Höhenwerte als Luftlinie: gerade vom
+                             Anfangs- zum Endpunkt durch die Luft, z. B. von der
+                             Tal- zur Bergstation einer Seilbahn
   --attributes/--no-attributes  Sachdaten mitnehmen (per Klick sichtbar)
   -o, --outfile              Zieldatei (.kmz oder .kml)
 
@@ -68,7 +69,6 @@ WGS84 = 4326                # EPSG-Code des Koordinatensystems von Google Earth
 ICON_LISTE = "https://kml4earth.appspot.com/icons.html"
 ICON_BREITE = 64            # Pixel, auf die ein SVG-Icon gerendert wird
 STICHPROBE = 1000           # so viele Objekte pro Layer werden auf Höhenwerte geprüft
-MIN_HELLIGKEIT = 0x40       # hellster Farbkanal muss mindestens so hell sein (kein Schwarz)
 
 
 @dataclass
@@ -195,8 +195,7 @@ def lies_farbe(text):
 
     Erlaubt sind eine Zahl 0-7 aus FARBEN oder ein Hex-Wert mit oder ohne "#",
     sechsstellig (FF8800) oder dreistellig (F80 = FF8800).
-    Schwarz und fast schwarze Farben sind nicht erlaubt, sie wären auf dunklem
-    Gelände kaum sichtbar. Ungültige Angaben lösen einen ValueError aus.
+    Ungültige Angaben lösen einen ValueError aus.
     """
     text = text.strip()
     if len(text) == 1 and text.isdigit():   # einzelne Ziffer = Nummer aus FARBEN
@@ -211,8 +210,6 @@ def lies_farbe(text):
     if len(hexwert) != 6 or any(z not in "0123456789ABCDEF" for z in hexwert):
         raise ValueError(f"Ungültige Farbe: {text} (erwartet 0-{len(FARBEN) - 1} "
                          "oder Hex-Wert wie #FF8800)")
-    if max(int(hexwert[i:i + 2], 16) for i in (0, 2, 4)) < MIN_HELLIGKEIT:
-        raise ValueError(f"Farbe #{hexwert} ist (fast) schwarz, bitte eine hellere wählen")
     return f"#{hexwert}", hexwert
 
 
@@ -244,7 +241,7 @@ def frage_luftlinie(linien_layer):
     """Fragen, ob Linien ohne Höhenwerte als Luftlinie gezeichnet werden."""
     print(f"\nLinien ohne Höhenwerte: {', '.join(linien_layer)}")
     print("  Nein: dem Gelände folgend (z. B. Wege, Strassen)")
-    print("  Ja:   Luftlinie, gerade von Stützpunkt zu Stützpunkt (z. B. Seilbahnen)")
+    print("  Ja:   Luftlinie, gerade vom Anfangs- zum Endpunkt (z. B. Seilbahnen)")
     return frage_ja_nein("Als Luftlinie zeichnen?", standard=False)
 
 
@@ -341,7 +338,7 @@ def lage_kml(hoehe, luftlinie=False):
     """Wie Google Earth die Geometrie in der Höhe platziert.
 
     absolute:         auf der gespeicherten Höhe über Meer (3D-Daten).
-    relativeToGround: Stützpunkte am Boden, dazwischen gerade durch die Luft.
+    relativeToGround: Endpunkte am Boden, dazwischen gerade durch die Luft.
     tessellate:       auf das Gelände gelegt, Linien folgen dem Relief.
     """
     if hoehe:
@@ -362,7 +359,11 @@ def geometrie_kml(geom, mit_hoehe, luftlinie):
 
     Hat die Geometrie Höhenwerte und ist mit_hoehe gesetzt, bleibt sie 3D.
     Sonst wird sie auf das Gelände gelegt, ausser Linien mit luftlinie=True:
-    diese verlaufen gerade von Stützpunkt zu Stützpunkt durch die Luft.
+    diese verlaufen gerade vom Anfangs- zum Endpunkt durch die Luft.
+
+    Für die Luftlinie werden bewusst nur die beiden Endpunkte verwendet. Mit
+    allen Stützpunkten (z. B. jedem Seilbahnmast) läge die Linie zwischen
+    nahen Punkten fast auf dem Gelände oder bei gewölbtem Hang sogar darunter.
     """
     typ = geom.geom_type
     hoehe = mit_hoehe and geom.has_z
@@ -370,8 +371,11 @@ def geometrie_kml(geom, mit_hoehe, luftlinie):
         lage = lage_kml(hoehe) if hoehe else ""   # tessellate gibt es bei Punkten nicht
         return f"<Point>{lage}<coordinates>{koordinaten(geom.coords, hoehe)}</coordinates></Point>"
     if typ in ("LineString", "LinearRing"):
+        punkte = geom.coords
+        if luftlinie and not hoehe:
+            punkte = [punkte[0], punkte[-1]]
         return (f"<LineString>{lage_kml(hoehe, luftlinie)}"
-                f"<coordinates>{koordinaten(geom.coords, hoehe)}</coordinates></LineString>")
+                f"<coordinates>{koordinaten(punkte, hoehe)}</coordinates></LineString>")
     if typ == "Polygon":
         aussen = f"<outerBoundaryIs>{ring_kml(geom.exterior, hoehe)}</outerBoundaryIs>"
         loecher = "".join(f"<innerBoundaryIs>{ring_kml(r, hoehe)}</innerBoundaryIs>"
