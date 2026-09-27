@@ -92,6 +92,15 @@ Alle Optionen zeigt `python Source/convert_gpkg_to_kmz.py --help`.
 
 Quelle: Bundesamt für Landestopografie swisstopo
 
+## Lizenz
+
+Die Skripte stehen unter der [MIT-Lizenz](LICENSE). Für die Geodaten in der
+KMZ-Datei gelten die Nutzungsbedingungen von swisstopo (Open Government Data,
+Quellenangabe erforderlich).
+
+Dies ist ein kostenloses Hobbyprojekt, ohne Verbindung zu einer Firma und ohne
+kommerzielle Absicht.
+
 ---
 
 <a id="english"></a>
@@ -189,3 +198,12 @@ options and messages are in German.
 - Canton borders: [swissBOUNDARIES3D](https://www.swisstopo.admin.ch/de/landschaftsmodell-swissboundaries3d)
 
 Source: Federal Office of Topography swisstopo
+
+## License
+
+The scripts are released under the [MIT License](LICENSE). The geodata in the
+KMZ file is subject to swisstopo's terms of use (Open Government Data, source
+attribution required).
+
+This is a free hobby project, not affiliated with any company and with no
+commercial intent.
