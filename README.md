@@ -77,29 +77,25 @@ alle Geometrietypen, jedes Koordinatensystem.
 
 ```
 pip install geopandas
-python Source/convert_gpkg_to_kmz.py
+python Source/convert_gpkg_to_kmz.py                    # fragt alles ab
+python Source/convert_gpkg_to_kmz.py -i daten.gpkg -l all -c 5
+python Source/convert_gpkg_to_kmz.py --help             # alle Parameter
 ```
 
-Das Skript fragt alles der Reihe nach ab. Fragen, die für die gewählten Daten
-keine Rolle spielen, entfallen:
+Jede Einstellung kann als Parameter angegeben werden, sonst wird sie abgefragt.
+Fragen, die für die gewählten Daten keine Rolle spielen, entfallen.
 
-1. GeoPackage-Datei
-2. welche Layer umgewandelt werden (alle oder einzelne)
-3. welches Attribut die Stecknadeln beschriftet (nur bei Punkt-Layern, mit
-   Beispieldatensatz)
-4. eigenes Symbol statt der Stecknadel, als URL oder Datei (nur bei
-   Punkt-Layern, Auswahl unter [kml4earth.appspot.com/icons.html](https://kml4earth.appspot.com/icons.html)).
-   Das Icon wird ins KMZ eingebettet, die Datei funktioniert also auch offline.
-   SVG wird in ein PNG mit transparentem Hintergrund umgewandelt, dafür braucht
-   es zusätzlich `pip install resvg-py`.
-5. Farbe: 0 Weiss (Standard), 1 Rot, 2 Orange, 3 Gelb, 4 Grün, 5 Blau,
-   6 Indigo, 7 Violett
-6. Höhenwerte behalten (nur wenn die Daten tatsächlich welche enthalten):
-   3D auf der gespeicherten Höhe über Meer oder auf das Gelände gelegt
-7. Linien ohne Höhenwerte als Luftlinie zeichnen, also gerade von Stützpunkt
-   zu Stützpunkt statt dem Gelände folgend (z. B. für Seilbahnen)
-8. Sachdaten mitnehmen (in Google Earth per Klick sichtbar)
-9. Zieldatei (.kmz oder .kml)
+| Parameter | Einstellung |
+|---|---|
+| `-i`, `--infile` | GeoPackage-Datei |
+| `-l`, `--layers` | Layer-Namen oder `all` |
+| `--label` | Attribut für die Beschriftung der Stecknadeln (nur Punkt-Layer, beim Abfragen mit Beispieldatensatz), `none` = keine |
+| `--icon` | eigenes Symbol als URL oder Datei (nur Punkt-Layer), `none` = Stecknadel. Auswahl unter [kml4earth.appspot.com/icons.html](https://kml4earth.appspot.com/icons.html). Das Icon wird ins KMZ eingebettet; SVG wird in ein PNG mit transparentem Hintergrund umgewandelt (braucht zusätzlich `pip install resvg-py`) |
+| `-c`, `--color` | 0 Weiss (Standard), 1 Rot, 2 Orange, 3 Gelb, 4 Grün, 5 Blau, 6 Indigo, 7 Violett |
+| `--elevation` / `--no-elevation` | Höhenwerte behalten (3D, Höhe über Meer) oder auf das Gelände legen. Nur relevant, wenn die Daten tatsächlich Höhenwerte enthalten |
+| `--straight` / `--no-straight` | Linien ohne Höhenwerte als Luftlinie, gerade von Stützpunkt zu Stützpunkt (z. B. Seilbahnen), oder dem Gelände folgend |
+| `--attributes` / `--no-attributes` | Sachdaten mitnehmen (in Google Earth per Klick sichtbar) |
+| `-o`, `--outfile` | Zieldatei (.kmz oder .kml) |
 
 ## Datenquellen
 
@@ -199,28 +195,26 @@ types, any coordinate system.
 
 ```
 pip install geopandas
-python Source/convert_gpkg_to_kmz.py
+python Source/convert_gpkg_to_kmz.py                    # asks for everything
+python Source/convert_gpkg_to_kmz.py -i data.gpkg -l all -c 5
+python Source/convert_gpkg_to_kmz.py --help             # all options
 ```
 
-The script asks for everything step by step (in German). Questions that don't
-apply to the selected data are skipped:
+Every setting can be passed as an option; anything missing is asked for
+interactively (in German). Questions that don't apply to the selected data are
+skipped.
 
-1. GeoPackage file
-2. which layers to convert (all or some)
-3. which attribute labels the pins (point layers only, with an example record)
-4. custom icon instead of the pin, as URL or file (point layers only, see
-   [kml4earth.appspot.com/icons.html](https://kml4earth.appspot.com/icons.html)).
-   The icon is embedded in the KMZ, so the file also works offline. SVG is
-   converted to a PNG with a transparent background, which additionally needs
-   `pip install resvg-py`.
-5. colour: 0 white (default), 1 red, 2 orange, 3 yellow, 4 green, 5 blue,
-   6 indigo, 7 violet
-6. keep elevation values (only if the data actually contains them): 3D at the
-   stored height above sea level, or draped on the terrain
-7. draw lines without elevation as straight lines through the air from vertex
-   to vertex instead of following the terrain (e.g. for cable cars)
-8. include attribute data (shown in Google Earth on click)
-9. output file (.kmz or .kml)
+| Option | Setting |
+|---|---|
+| `-i`, `--infile` | GeoPackage file |
+| `-l`, `--layers` | layer names or `all` |
+| `--label` | attribute that labels the pins (point layers only, with an example record when asked), `none` = no label |
+| `--icon` | custom icon as URL or file (point layers only), `none` = default pin. See [kml4earth.appspot.com/icons.html](https://kml4earth.appspot.com/icons.html). The icon is embedded in the KMZ; SVG is converted to a PNG with a transparent background (additionally needs `pip install resvg-py`) |
+| `-c`, `--color` | 0 white (default), 1 red, 2 orange, 3 yellow, 4 green, 5 blue, 6 indigo, 7 violet |
+| `--elevation` / `--no-elevation` | keep elevation (3D, height above sea level) or drape on the terrain. Only relevant if the data actually contains elevation values |
+| `--straight` / `--no-straight` | draw lines without elevation as straight lines through the air from vertex to vertex (e.g. cable cars), or follow the terrain |
+| `--attributes` / `--no-attributes` | include attribute data (shown in Google Earth on click) |
+| `-o`, `--outfile` | output file (.kmz or .kml) |
 
 ## Data sources
 

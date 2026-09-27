@@ -1,34 +1,43 @@
 """
 GeoPackage (.gpkg) nach KMZ oder KML für Google Earth umwandeln.
 
-Das Skript funktioniert mit beliebigen GeoPackages und fragt alles der Reihe
-nach ab. Fragen, die für die gewählten Daten keine Rolle spielen, entfallen.
+Das Skript funktioniert mit beliebigen GeoPackages. Jede Einstellung kann als
+Parameter angegeben werden, sonst wird sie abgefragt. Fragen, die für die
+gewählten Daten keine Rolle spielen, entfallen.
 
-  1. GeoPackage-Datei
-  2. welche Layer umgewandelt werden (alle oder einzelne)
-  3. welches Attribut die Stecknadeln beschriftet (nur bei Punkt-Layern,
-     dazu wird ein Beispieldatensatz angezeigt)
-  4. eigenes Symbol statt der Stecknadel, als URL oder Datei (nur bei
-     Punkt-Layern). Es wird ins KMZ eingebettet und funktioniert daher auch
-     offline. SVG zeigt Google Earth nicht an, es wird deshalb in ein PNG mit
-     transparentem Hintergrund umgewandelt (braucht: pip install resvg-py)
-  5. Farbe, nie Schwarz:
-        0 Weiss (Standard)   1 Rot      2 Orange   3 Gelb
-        4 Grün               5 Blau     6 Indigo   7 Violett
-  6. Höhenwerte behalten (nur wenn die Daten tatsächlich welche enthalten):
-     Ja = 3D auf der gespeicherten Höhe über Meer, Nein = auf das Gelände gelegt
-  7. Linien ohne Höhenwerte als Luftlinie, also gerade von Stützpunkt zu
-     Stützpunkt statt dem Gelände folgend (z. B. für Seilbahnen)
-  8. Sachdaten mitnehmen (in Google Earth per Klick sichtbar)
-  9. Zieldatei (.kmz oder .kml)
+  Parameter                  Frage
+  -i, --infile               GeoPackage-Datei
+  -l, --layers               welche Layer umgewandelt werden (Namen oder "all")
+  --label                    Attribut, das die Stecknadeln beschriftet (nur bei
+                             Punkt-Layern, mit Beispieldatensatz; "none" = keine)
+  --icon                     eigenes Symbol statt der Stecknadel, URL oder Datei
+                             (nur bei Punkt-Layern; "none" = Stecknadel). Es wird
+                             ins KMZ eingebettet. SVG wird in ein PNG mit
+                             transparentem Hintergrund umgewandelt (braucht:
+                             pip install resvg-py)
+  -c, --color                Farbe, nie Schwarz:
+                               0 Weiss (Standard)  1 Rot   2 Orange  3 Gelb
+                               4 Grün              5 Blau  6 Indigo  7 Violett
+  --elevation/--no-elevation Höhenwerte behalten (nur wenn die Daten tatsächlich
+                             welche enthalten): 3D auf der gespeicherten Höhe
+                             über Meer oder auf das Gelände gelegt
+  --straight/--no-straight   Linien ohne Höhenwerte als Luftlinie, gerade von
+                             Stützpunkt zu Stützpunkt (z. B. für Seilbahnen)
+  --attributes/--no-attributes  Sachdaten mitnehmen (per Klick sichtbar)
+  -o, --outfile              Zieldatei (.kmz oder .kml)
 
 Alle Geometrietypen (Punkte, Linien, Flächen und deren Multi-Varianten) werden
 unterstützt, jedes Koordinatensystem wird nach WGS84 umgerechnet, das Google
 Earth erwartet. Jeder Layer wird ein eigener Ordner in Google Earth.
 
 Installation:  pip install geopandas          (resvg-py nur für SVG-Icons)
-Aufruf:        python convert_gpkg_to_kmz.py
+Beispiele:
+    python convert_gpkg_to_kmz.py                        (fragt alles ab)
+    python convert_gpkg_to_kmz.py -i daten.gpkg -l all -c 5
+    python convert_gpkg_to_kmz.py -i seilbahnen.gpkg -l Seilbahnstrecke Station
+        --label BP_Name --icon none -c 1 --straight --attributes -o seilbahnen.kmz
 """
+import argparse
 import io
 import urllib.request
 import zipfile
@@ -388,6 +397,10 @@ def schreibe_kml(datei, gpkg, e, icon_href):
 
         # Gewählte Beschriftung, sonst automatisch eine Spalte "name"
         name_spalte = e.beschriftung.get(name, namensspalte(gdf.columns))
+        if name_spalte and name_spalte not in gdf.columns:
+            print(f"  Warnung: Layer {name} hat kein Attribut {name_spalte}, "
+                  "keine Beschriftung.")
+            name_spalte = None
 
         print(f"  {name}: {len(gdf)} Objekte")
         datei.write(f"<Folder><name>{escape(name)}</name>\n")
@@ -419,29 +432,100 @@ def konvertiere(gpkg, ziel, e):
                 kmz.writestr(icon_href, icon)
 
 
+# --- Parameter ------------------------------------------------------------------
+def argumente():
+    """Kommandozeilen-Parameter. Jeder ist optional; was fehlt, wird abgefragt."""
+    parser = argparse.ArgumentParser(
+        description="GeoPackage nach KMZ/KML für Google Earth umwandeln. "
+                    "Nicht angegebene Parameter werden abgefragt.")
+    parser.add_argument("-i", "--infile", type=Path, help="GeoPackage-Datei (.gpkg)")
+    parser.add_argument("-o", "--outfile", type=Path,
+                        help="Zieldatei (.kmz oder .kml)")
+    parser.add_argument("-l", "--layers", nargs="+", metavar="LAYER",
+                        help='Layer-Namen oder "all" für alle')
+    parser.add_argument("--label", metavar="SPALTE",
+                        help='Attribut für die Beschriftung der Stecknadeln, "none" = keine')
+    parser.add_argument("--icon", metavar="URL_ODER_DATEI",
+                        help=f'Icon für Punkte, "none" = Stecknadel. Auswahl: {ICON_LISTE}')
+    parser.add_argument("-c", "--color", type=int, choices=range(len(FARBEN)),
+                        help="Farbe: " + ", ".join(f"{i} {n}" for i, (n, _) in enumerate(FARBEN)))
+    parser.add_argument("--elevation", action=argparse.BooleanOptionalAction,
+                        help="Höhenwerte behalten (3D) bzw. auf das Gelände legen")
+    parser.add_argument("--straight", action=argparse.BooleanOptionalAction,
+                        help="Linien ohne Höhe als Luftlinie bzw. dem Gelände folgend")
+    parser.add_argument("--attributes", action=argparse.BooleanOptionalAction,
+                        help="Sachdaten mitnehmen bzw. weglassen")
+    return parser, parser.parse_args()
+
+
+def ohne(wert):
+    """True, wenn ein Parameter ausdrücklich "nichts" bedeutet ("none" oder leer)."""
+    return wert.strip().lower() in ("", "none")
+
+
 # --- Ablauf ---------------------------------------------------------------------
 def main():
-    gpkg = frage_gpkg()
+    parser, args = argumente()
+
+    # Jede Einstellung: Parameter verwenden, falls angegeben, sonst abfragen
+    gpkg = args.infile or frage_gpkg()
+    if not gpkg.is_file():
+        parser.error(f"Datei nicht gefunden: {gpkg}")
     alle = gpd.list_layers(gpkg)
     typen = dict(zip(alle["name"], alle["geometry_type"].astype(str)))
+    karten_layer = list(alle.loc[alle["geometry_type"].notna(), "name"])
 
-    layer = frage_layer(alle)
+    if args.layers is None:
+        layer = frage_layer(alle)
+    elif [n.lower() for n in args.layers] == ["all"]:
+        layer = karten_layer
+    else:
+        unbekannt = [n for n in args.layers if n not in karten_layer]
+        if unbekannt:
+            parser.error(f"Unbekannte Layer oder ohne Geometrie: {', '.join(unbekannt)}. "
+                         f"Vorhanden: {', '.join(karten_layer)}")
+        layer = args.layers
+
     punkt_layer = [n for n in layer if "Point" in typen[n]]
-    beschriftung = frage_beschriftung(gpkg, punkt_layer)
-    icon = frage_icon() if punkt_layer else ""
-    farbname, rgb = FARBEN[frage_farbe()]
+    if args.label is None:
+        beschriftung = frage_beschriftung(gpkg, punkt_layer)
+    else:
+        beschriftung = {n: None if ohne(args.label) else args.label for n in punkt_layer}
 
-    # Höhenfrage nur, wenn Layer tatsächlich Höhenwerte enthalten
+    if args.icon is not None:
+        icon = "" if ohne(args.icon) else args.icon
+    else:
+        icon = frage_icon() if punkt_layer else ""
+
+    farbe = args.color if args.color is not None else frage_farbe()
+    farbname, rgb = FARBEN[farbe]
+
+    # Höhe nur, wenn Layer tatsächlich Höhenwerte enthalten
     z_layer = [n for n in layer if hat_hoehenwerte(gpkg, n)]
-    hoehe_layer = set(z_layer) if z_layer and frage_hoehe(z_layer) else set()
+    if not z_layer:
+        mit_hoehe = False
+    elif args.elevation is not None:
+        mit_hoehe = args.elevation
+    else:
+        mit_hoehe = frage_hoehe(z_layer)
+    hoehe_layer = set(z_layer) if mit_hoehe else set()
 
     # Luftlinie nur für Linien, die nicht schon mit Höhe gezeichnet werden
     linien_layer = [n for n in layer if "LineString" in typen[n] and n not in hoehe_layer]
-    luftlinie = frage_luftlinie(linien_layer) if linien_layer else False
+    if not linien_layer:
+        luftlinie = False
+    elif args.straight is not None:
+        luftlinie = args.straight
+    else:
+        luftlinie = frage_luftlinie(linien_layer)
 
-    mit_attributen = frage_ja_nein(
-        "\nSachdaten mitnehmen (in Google Earth per Klick sichtbar)?", standard=True)
-    ziel = frage_ziel(gpkg)
+    if args.attributes is not None:
+        mit_attributen = args.attributes
+    else:
+        mit_attributen = frage_ja_nein(
+            "\nSachdaten mitnehmen (in Google Earth per Klick sichtbar)?", standard=True)
+
+    ziel = args.outfile or frage_ziel(gpkg)
 
     e = Einstellungen(layer, beschriftung, icon, rgb, hoehe_layer, luftlinie, mit_attributen)
     print(f"\n{gpkg} -> {ziel} ({farbname})")
