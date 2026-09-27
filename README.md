@@ -22,7 +22,7 @@ sie in Google Earth (Desktop oder Web).
 | Ordner | Inhalt |
 |---|---|
 | [Google-Earth/](Google-Earth/) | KMZ-Datei für Google Earth |
-| [Source/](Source/) | Python-Skript, das die KMZ-Datei erzeugt |
+| [Source/](Source/) | Python-Skripte: Erzeugung der KMZ-Datei und allgemeiner GeoPackage-Konverter |
 
 ## Inhalt
 
@@ -69,6 +69,22 @@ erzeugt. Die Regionen lassen sich dort im Dictionary `REGIONEN` anpassen.
 
 Die Datei landet in `Google-Earth/`.
 
+## Beliebiges GeoPackage nach KMZ umwandeln
+
+[Source/convert_gpkg_to_kmz.py](Source/convert_gpkg_to_kmz.py) wandelt ein
+beliebiges GeoPackage (.gpkg) in eine KMZ- oder KML-Datei für Google Earth um:
+alle Layer, alle Geometrietypen, jedes Koordinatensystem. Die Farbe ist wählbar:
+0 Weiss (Standard), 1 Rot, 2 Orange, 3 Gelb, 4 Grün, 5 Blau, 6 Indigo, 7 Violett.
+
+```
+pip install geopandas
+python Source/convert_gpkg_to_kmz.py daten.gpkg              # fragt nach der Farbe
+python Source/convert_gpkg_to_kmz.py daten.gpkg --farbe 5    # blau
+python Source/convert_gpkg_to_kmz.py daten.gpkg -o karte.kml --ohne-attribute
+```
+
+Alle Optionen zeigt `python Source/convert_gpkg_to_kmz.py --help`.
+
 ## Datenquellen
 
 - Wanderwege: [swissTLM3D Wanderwege](https://opendata.swiss/de/dataset/swisstlm3d-wanderwege)
@@ -102,7 +118,7 @@ Earth (desktop or web).
 | Folder | Contents |
 |---|---|
 | [Google-Earth/](Google-Earth/) | KMZ file for Google Earth |
-| [Source/](Source/) | Python script that builds the KMZ file |
+| [Source/](Source/) | Python scripts: builds the KMZ file, plus a general GeoPackage converter |
 
 ## Contents
 
@@ -149,6 +165,23 @@ You can change the regions in the `REGIONEN` dictionary.
    ```
 
 The file is written to `Google-Earth/`.
+
+## Convert any GeoPackage to KMZ
+
+[Source/convert_gpkg_to_kmz.py](Source/convert_gpkg_to_kmz.py) converts any
+GeoPackage (.gpkg) into a KMZ or KML file for Google Earth: all layers, all
+geometry types, any coordinate system. You can pick the colour: 0 white
+(default), 1 red, 2 orange, 3 yellow, 4 green, 5 blue, 6 indigo, 7 violet.
+
+```
+pip install geopandas
+python Source/convert_gpkg_to_kmz.py data.gpkg              # asks for the colour
+python Source/convert_gpkg_to_kmz.py data.gpkg --farbe 5    # blue
+python Source/convert_gpkg_to_kmz.py data.gpkg -o map.kml --ohne-attribute
+```
+
+`python Source/convert_gpkg_to_kmz.py --help` lists all options. The script's
+options and messages are in German.
 
 ## Data sources
 
